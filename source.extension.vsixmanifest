@@ -2,9 +2,11 @@
 <Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
   <Identifier Id="BackgroundColorFix">
     <Name>Background Color Fix</Name>
-    <Author>Noah Richards</Author>
-    <Version>0.2</Version>
-    <Description xml:space="preserve">Fix the behavior of text background colors in the editor in two ways. First, remove the gap in the background color between subsequent lines with the same color. Second, when the background color is at the end of the line, draw the background color to the edge of the view.</Description>
+    <Author>Ian Prest</Author>
+    <Version>0.3</Version>
+    <Description xml:space="preserve">(per Noah Richards)
+
+Fix the behavior of text background colors in the editor in two ways. First, remove the gap in the background color between subsequent lines with the same color. Second, when the background color is at the end of the line, draw the background color to the edge of the (per view.</Description>
     <Locale>1033</Locale>
     <MoreInfoUrl>http://blogs.msdn.com/noahric</MoreInfoUrl>
     <License>ms-pl.txt</License>
