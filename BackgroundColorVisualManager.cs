@@ -49,12 +49,12 @@ namespace BackgroundColorFix
             FixFormatMap(_formatMap.CurrentPriorityOrder);
 
             _formatMap.ClassificationFormatMappingChanged += (sender, args) =>
+            {
+                if (!_inUpdate)
                 {
-                    if (!_inUpdate)
-                    {
-                        FixFormatMap(_formatMap.CurrentPriorityOrder);
-                    }
-                };
+                    FixFormatMap(_formatMap.CurrentPriorityOrder);
+                }
+            };
 
             PresentationSource.AddSourceChangedHandler(_view.VisualElement, OnSourceChanged);
         }
@@ -137,42 +137,81 @@ namespace BackgroundColorFix
 
         private void OnLayoutChanged(object sender, TextViewLayoutChangedEventArgs e)
         {
+            List<ITextViewLine> lines = new List<ITextViewLine>();
             foreach (ITextViewLine line in e.NewOrReformattedLines)
+                lines.Add(line);
+            if (lines.Count > 0 && lines[0].Start.Position > 0)
             {
-                this.CreateVisuals(line);
+                lines.Insert(0, _view.GetTextViewLineContainingBufferPosition(new SnapshotPoint(lines[0].Snapshot, lines[0].Start.Position - 1)));
+            }
+
+            foreach (ITextViewLine line in lines)
+            {
+                int lookahead = 2;
+                ITextViewLine nextLine = line;
+                while (lookahead >= 0 && nextLine != null && !this.CreateVisuals(line, nextLine))
+                {
+                    lookahead--;
+                    try
+                    {
+                        ITextViewLine oldNextLine = nextLine;
+                        nextLine = _view.GetTextViewLineContainingBufferPosition(new SnapshotPoint(nextLine.Snapshot, nextLine.EndIncludingLineBreak));
+                        if (oldNextLine == nextLine)
+                            nextLine = null;
+
+                        // Check to see if a new comment starts at the beginning of the line
+                        string start = nextLine.Snapshot.GetText(new Span(nextLine.Start.Position, 2));
+                        if (start == "//" || start == "/*")
+                            nextLine = null;
+                    }
+                    catch { nextLine = null; }
+                }
             }
         }
 
-        private void CreateVisuals(ITextViewLine line)
+        private bool CreateVisuals(ITextViewLine line, ITextViewLine nextLine)
         {
-            foreach (var tagSpan in _aggregator.GetTags(line.ExtentAsMappingSpan))
+            bool hasSpans = false;
+            foreach (var tagSpan in _aggregator.GetTags(nextLine.ExtentAsMappingSpan))
             {
                 foreach (var span in tagSpan.Span.GetSpans(_view.TextSnapshot))
                 {
-                    var textProperties = _formatMap.GetTextProperties(tagSpan.Tag.ClassificationType);
+                    hasSpans = true;
+                    if (line == nextLine || span.Start.Position == nextLine.Start.Position)
+                    {
+                        var textProperties = _formatMap.GetTextProperties(tagSpan.Tag.ClassificationType);
+                        if (textProperties.BackgroundBrushEmpty)
+                            continue;
 
-                    if (textProperties.BackgroundBrushEmpty)
-                        continue;
+                        var solidColorBrush = textProperties.BackgroundBrush as SolidColorBrush;
+                        if (solidColorBrush == null || solidColorBrush.Opacity != Transparent)
+                            continue;
 
-                    var solidColorBrush = textProperties.BackgroundBrush as SolidColorBrush;
-                    if (solidColorBrush == null || solidColorBrush.Opacity != Transparent)
-                        continue;
+                        Brush brush = new SolidColorBrush(solidColorBrush.Color) { Opacity = 1.0 };
 
-                    Brush brush = new SolidColorBrush(solidColorBrush.Color) { Opacity = 1.0 };
+                        bool extendToRight = (line != nextLine) || (span.Span.End == line.End);
 
-                    bool extendToRight = span.Span.End == line.End;
-
-                    CreateAndAddAdornment(line, span, brush, extendToRight);
+                        CreateAndAddAdornment(line, span, brush, extendToRight);
+                    }
+                    // If we're looking forward, only look at the first span
+                    if (line != nextLine)
+                        break;
                 }
             }
+            return hasSpans;
         }
 
         void CreateAndAddAdornment(ITextViewLine line, SnapshotSpan span, Brush brush, bool extendToRight)
         {
             var markerGeometry = _view.TextViewLines.GetMarkerGeometry(span);
 
-            double left = markerGeometry.Bounds.Left;
-            double width = extendToRight ? _view.ViewportWidth + _view.MaxTextRightCoordinate : markerGeometry.Bounds.Width;
+            double left = 0;
+            double width = _view.ViewportWidth + _view.MaxTextRightCoordinate;
+            if (markerGeometry != null)
+            {
+                left = markerGeometry.Bounds.Left;
+                if (!extendToRight) width = markerGeometry.Bounds.Width;
+            }
 
             Rect rect = new Rect(left, line.Top, width, line.Height);
 
