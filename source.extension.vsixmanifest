@@ -3,7 +3,7 @@
   <Identifier Id="BackgroundColorFix">
     <Name>Background Color Fix</Name>
     <Author>Ian Prest</Author>
-    <Version>0.8</Version>
+    <Version>0.9</Version>
     <Description xml:space="preserve">(per Noah Richards)
 
 Fix the behavior of text background colors in the editor in two ways. First, remove the gap in the background color between subsequent lines with the same color. Second, when the background color is at the end of the line, draw the background color to the edge of the view.</Description>
@@ -12,16 +12,7 @@ Fix the behavior of text background colors in the editor in two ways. First, rem
     <License>ms-pl.txt</License>
     <PreviewImage>screenshot.png</PreviewImage>
     <SupportedProducts>
-      <VisualStudio Version="10.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-      <VisualStudio Version="11.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-      <VisualStudio Version="12.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-      <VisualStudio Version="14.0">
+      <VisualStudio Version="15.0">
         <Edition>Pro</Edition>
       </VisualStudio>
     </SupportedProducts>
